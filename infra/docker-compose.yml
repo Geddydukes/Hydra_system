@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  router:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.router
+    ports: ["8000:8000"]
+    env_file: .env
+    depends_on: [teachers, llm]
+
+  teachers:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.teachers
+    ports: ["8001:8001"]
+    env_file: .env
+
+  llm:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.llm
+    ports: ["8002:8002"]
+    env_file: .env

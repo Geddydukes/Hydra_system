@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hydra/schema/PolicyChange.schema.json",
+  "type": "object",
+  "required": ["id", "jurisdiction", "changes"],
+  "properties": {
+    "id": { "type": "string" },
+    "jurisdiction": { "type": "string" },
+    "changes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["param"],
+        "properties": {
+          "param": { "type": "string" },
+          "old": {},
+          "new": {},
+          "scope": { "type": "object" },
+          "effective_date": { "type": "string", "format": "date" },
+          "citations": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "confidence": { "type": "number" },
+    "sources": { "type": "array", "items": { "type": "string" } }
+  }
+}

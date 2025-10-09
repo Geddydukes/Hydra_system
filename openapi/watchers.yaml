@@ -1,0 +1,54 @@
+openapi: 3.0.3
+info:
+  title: Hydra Watchers & Policy Parser API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8003
+paths:
+  /health:
+    get:
+      responses: { "200": { description: OK } }
+  /watchers/event:
+    post:
+      summary: Ingest a normalized external document event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [doc_id, content]
+              properties:
+                doc_id: { type: string }
+                jurisdiction: { type: string }
+                doc_type: { type: string }
+                effective_date: { type: string, format: date }
+                content: { type: string }
+                metadata:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "202":
+          description: Accepted for parsing
+  /policy_changes:
+    post:
+      summary: Submit a PolicyChange detected elsewhere (bypass parsing)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Affected teachers + next steps
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  policy_change_id: { type: string }
+                  affected_teachers:
+                    type: array
+                    items: { type: string }

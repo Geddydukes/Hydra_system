@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hydra/schema/TrainingTuple.schema.json",
+  "type": "object",
+  "required": [
+    "input_text",
+    "teacher_id",
+    "teacher_version",
+    "symbolic_output"
+  ],
+  "properties": {
+    "input_text": { "type": "string" },
+    "normalized_inputs": { "type": "object" },
+    "teacher_id": { "type": "string" },
+    "teacher_version": { "type": "string" },
+    "symbolic_output": { "type": "object" },
+    "llm_output": { "type": "string" },
+    "explanation_output": { "type": "string" },
+    "label_type": { "type": "string", "enum": ["positive", "negative"] },
+    "approved_for_training": { "type": "boolean" }
+  }
+}

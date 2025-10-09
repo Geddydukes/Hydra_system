@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hydra/schema/Trace.schema.json",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["rule_id", "passed"],
+    "properties": {
+      "rule_id": { "type": "string" },
+      "passed": { "type": "boolean" },
+      "threshold": { "type": ["number", "string"] },
+      "value": { "type": ["number", "string"] },
+      "explanation": { "type": "string" }
+    }
+  }
+}

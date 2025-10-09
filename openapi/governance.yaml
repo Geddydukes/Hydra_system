@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info:
+  title: Hydra Governance API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8005
+paths:
+  /health:
+    get:
+      responses: { "200": { description: OK } }
+  /reviews/pending:
+    get:
+      summary: List items awaiting review (teachers, patches, models)
+      responses:
+        "200":
+          description: Pending items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+  /reviews/{id}/approve:
+    post:
+      summary: Approve a pending item
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Approved }
+  /reviews/{id}/reject:
+    post:
+      summary: Reject a pending item
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rationale: { type: string }
+      responses:
+        "200": { description: Rejected }

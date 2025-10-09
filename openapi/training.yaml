@@ -1,0 +1,58 @@
+openapi: 3.0.3
+info:
+  title: Hydra Training & Logging API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8004
+paths:
+  /health:
+    get:
+      responses: { "200": { description: OK } }
+  /tuples/ingest:
+    post:
+      summary: Ingest a training tuple from a routed run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                [input_text, teacher_id, teacher_version, symbolic_output]
+              properties:
+                input_text: { type: string }
+                normalized_inputs: { type: object, additionalProperties: true }
+                teacher_id: { type: string }
+                teacher_version: { type: string }
+                symbolic_output: { type: object, additionalProperties: true }
+                llm_output: { type: string }
+                explanation_output: { type: string }
+                label_type: { type: string, enum: [positive, negative] }
+                approved_for_training: { type: boolean, default: false }
+      responses:
+        "200":
+          description: Tuple stored
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string }
+  /models/promote:
+    post:
+      summary: Record promotion of a trained model snapshot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [model_id, metrics]
+              properties:
+                model_id: { type: string }
+                metrics:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Promotion logged

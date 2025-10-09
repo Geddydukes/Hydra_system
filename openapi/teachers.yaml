@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: Hydra Teachers API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8001
+paths:
+  /health:
+    get:
+      responses: { "200": { description: OK } }
+  /teachers/execute:
+    post:
+      summary: Execute a teacher deterministically
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [teacher_id, inputs]
+              properties:
+                teacher_id: { type: string }
+                version: { type: string }
+                inputs:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Deterministic result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [verdict, outputs, trace]
+                properties:
+                  verdict:
+                    type: string
+                    enum: [PASS, FAIL, INFO]
+                  outputs:
+                    type: object
+                    additionalProperties: true
+                  trace:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        rule_id: { type: string }
+                        passed: { type: boolean }
+                        threshold: { type: number }
+                        value: { type: number }
+                        explanation: { type: string }
+                  effective_version: { type: string }
+  /teachers/{teacher_id}:
+    get:
+      summary: Get teacher spec metadata
+      parameters:
+        - in: path
+          name: teacher_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Teacher metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  teacher_id: { type: string }
+                  domain: { type: string }
+                  type: { type: string, enum: [rules, solver, query] }
+                  versions:
+                    type: array
+                    items: { type: string }
+  /teachers/{teacher_id}/versions/{version}:
+    get:
+      summary: Fetch specific teacher spec (read-only)
+      parameters:
+        - {
+            in: path,
+            name: teacher_id,
+            required: true,
+            schema: { type: string },
+          }
+        - { in: path, name: version, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: TeacherSpec JSON
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true

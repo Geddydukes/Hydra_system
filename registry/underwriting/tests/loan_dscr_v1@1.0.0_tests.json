@@ -1,0 +1,19 @@
+{
+  "unit": [
+    {
+      "inputs": { "noi": 120000, "annual_debt_service": 100000 },
+      "expect": { "verdict": "PASS" }
+    },
+    {
+      "inputs": { "noi": 119000, "annual_debt_service": 100000 },
+      "expect": { "verdict": "FAIL" }
+    }
+  ],
+  "property": [{ "property": "monotonic_noi", "assert": "if noi↑ then dscr↑" }],
+  "counterfactual": [
+    {
+      "inputs": { "noi": 114000, "annual_debt_service": 100000 },
+      "expected_flip": { "noi": 120000 }
+    }
+  ]
+}

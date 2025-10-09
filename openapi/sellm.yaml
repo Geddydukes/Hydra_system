@@ -1,0 +1,88 @@
+openapi: 3.0.3
+info:
+  title: Hydra SELLM API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8002
+paths:
+  /health:
+    get:
+      responses: { "200": { description: OK } }
+  /sellm/create:
+    post:
+      summary: Create a draft teacher for an unsupported intent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [intent]
+              properties:
+                intent: { type: string }
+                context:
+                  type: object
+                  properties:
+                    jurisdiction: { type: string }
+                    input_schema:
+                      type: object
+                      additionalProperties: true
+                    examples:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          query: { type: string }
+      responses:
+        "200":
+          description: Draft teacher bundle
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  teacher_spec: { type: object, additionalProperties: true }
+                  tests: { type: array, items: { type: object } }
+                  explanation_template: { type: string }
+                  references: { type: array, items: { type: string } }
+                  confidence: { type: number }
+  /sellm/patch:
+    post:
+      summary: Propose a JSON Patch for an existing teacher based on a PolicyChange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [teacher_id, policy_change]
+              properties:
+                teacher_id: { type: string }
+                policy_change:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Patch + test report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  patch:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        op: { type: string }
+                        path: { type: string }
+                        value: {}
+                  test_report:
+                    type: object
+                    properties:
+                      unit_pass: { type: integer }
+                      property_pass: { type: integer }
+                      regression_changed: { type: integer }
+                      regression_total: { type: integer }
+                  references: { type: array, items: { type: string } }
+                  confidence: { type: number }

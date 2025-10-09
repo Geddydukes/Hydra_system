@@ -1,0 +1,24 @@
+{
+  "teacher_id": "loan_dscr_v1",
+  "domain": "underwriting",
+  "type": "rules",
+  "inputs_schema": {
+    "noi": { "type": "number", "units": "USD/yr" },
+    "annual_debt_service": { "type": "number", "units": "USD/yr" }
+  },
+  "computed": {
+    "dscr": "noi / annual_debt_service"
+  },
+  "rules": [
+    {
+      "id": "DSCR_MIN_1_20",
+      "expr": "dscr >= 1.20",
+      "severity": "fail",
+      "threshold": 1.2
+    }
+  ],
+  "explanation_fields": ["dscr", "DSCR_MIN_1_20.threshold"],
+  "jurisdictions": ["US"],
+  "effective_date": "2025-01-01",
+  "metadata": { "source": "Internal policy manual §3.2" }
+}

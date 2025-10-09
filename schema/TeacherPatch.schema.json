@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hydra/schema/TeacherPatch.schema.json",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["op", "path"],
+    "properties": {
+      "op": {
+        "type": "string",
+        "enum": ["add", "remove", "replace", "copy", "move", "test"]
+      },
+      "path": { "type": "string" },
+      "value": {}
+    }
+  }
+}

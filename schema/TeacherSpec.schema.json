@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hydra/schema/TeacherSpec.schema.json",
+  "type": "object",
+  "required": [
+    "teacher_id",
+    "domain",
+    "type",
+    "inputs_schema",
+    "explanation_fields"
+  ],
+  "properties": {
+    "teacher_id": { "type": "string", "minLength": 3 },
+    "domain": { "type": "string" },
+    "type": { "type": "string", "enum": ["rules", "solver", "query"] },
+    "inputs_schema": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["number", "string", "integer", "boolean"]
+          },
+          "units": { "type": "string" }
+        }
+      }
+    },
+    "computed": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "expr"],
+        "properties": {
+          "id": { "type": "string" },
+          "expr": { "type": "string" },
+          "severity": {
+            "type": "string",
+            "enum": ["fail", "warn", "info"],
+            "default": "fail"
+          },
+          "threshold": { "type": ["number", "string"] }
+        }
+      }
+    },
+    "constraints": { "type": "array", "items": { "type": "object" } },
+    "objective": { "type": "string" },
+    "explanation_fields": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "jurisdictions": { "type": "array", "items": { "type": "string" } },
+    "effective_date": { "type": "string", "format": "date" },
+    "metadata": { "type": "object" }
+  }
+}
