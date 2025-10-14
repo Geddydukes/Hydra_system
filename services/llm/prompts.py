@@ -17,8 +17,9 @@ User text:
 EXPLAIN_PROMPT = """You are a careful technical writer.
 
 Write a concise, faithful explanation from a symbolic trace.
-- Use ONLY numbers and thresholds present in the trace.
-- Do not add new facts or advice.
+Rules:
+- Use ONLY numbers from the AllowedNumbers list below.
+- Do not invent new facts or advice.
 - Keep it under 2 sentences.
 Output a JSON object: {{"explanation": "..."}}
 
@@ -26,6 +27,8 @@ Output a JSON object: {{"explanation": "..."}}
  "mode":"explain",
  "teacher_id":"{teacher_id}"
 }}
+
+AllowedNumbers: {allowed_numbers}
 
 Trace:
 {trace_json}

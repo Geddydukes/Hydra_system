@@ -106,6 +106,10 @@ def detect_intent(query: str) -> Optional[str]:
     if any(t in q for t in underwriting_terms):
         return "underwriting_dscr"
 
+    transfer_tax_terms = ("transfer tax", "transfer-tax", "stamp duty", "conveyance tax")
+    if any(t in q for t in transfer_tax_terms):
+        return "transfer_tax"
+
     # Optional external YAML (id -> keywords[])
     yaml_path = settings.ROUTER_INTENTS_YAML
     if yaml_path and Path(yaml_path).exists():
@@ -165,12 +169,11 @@ def normalize_for_teacher(teacher_id: str, query: Optional[str], metadata: Dict[
     for key in required_keys:
         if key in metadata and metadata[key] is not None:
             val = metadata[key]
-            if isinstance(val, (int, float, str)):
-                if isinstance(val, str):
-                    parsed = _to_number(val)
-                    out[key] = parsed if parsed is not None else val
-                else:
-                    out[key] = float(val) if isinstance(val, (int, float)) else val
+            if isinstance(val, str):
+                parsed = _to_number(val.replace("%",""))
+                out[key] = parsed if parsed is not None else val
+            elif isinstance(val, (int, float)):
+                out[key] = float(val)
 
     # 2) fallback: parse query text
     if query:
@@ -200,6 +203,30 @@ def normalize_for_teacher(teacher_id: str, query: Optional[str], metadata: Dict[
                 out["noi"] = float(noi)
             if ads is not None:
                 out["annual_debt_service"] = float(ads)
+        elif teacher_id.startswith("transfer_tax_v1"):
+            sp = out.get("sale_price")
+            rp = out.get("rate_pct")
+
+            if sp is None:
+                sp = _extract_first_number(q, ("sale price","price","sale","amount","property value","value"))
+                if sp is None:
+                    sp = _extract_any_number(q)
+            # percent: allow "0.5%" or "0.5 pct" or "0.5"
+            if rp is None:
+                m = re.search(r"(\d+(\.\d+)?)\s*%|\b(\d+(\.\d+)?)\s*pct\b", q, flags=re.I)
+                if m:
+                    rp = float(m.group(1) or m.group(3))
+                else:
+                    # try fallback second number
+                    first = _extract_any_number(q)
+                    if first is not None:
+                        q_wo_first = re.sub(r"(\$?[0-9][0-9,\.]*\s*[kmb]?)", "", q, count=1, flags=re.I)
+                        rp = _extract_any_number(q_wo_first)
+
+            if sp is not None:
+                out["sale_price"] = float(sp)
+            if rp is not None:
+                out["rate_pct"] = float(rp)
 
     # 3) final validation: ensure all required keys present and numeric when expected
     missing = [k for k in required_keys if k not in out]
@@ -220,6 +247,21 @@ def normalize_for_teacher(teacher_id: str, query: Optional[str], metadata: Dict[
 # FastAPI app
 # -------------------------
 app = FastAPI(title="Hydra Router", version="0.1.0")
+
+@app.middleware("http")
+async def log_requests(request, call_next):
+    import time
+    start = time.time()
+    resp = await call_next(request)
+    dur = (time.time() - start) * 1000
+    path = request.url.path
+    try:
+        body = await request.body()
+        body_len = len(body)
+    except Exception:
+        body_len = -1
+    print(f"[router] {request.method} {path} {resp.status_code} {dur:.1f}ms body={body_len}")
+    return resp
 
 @app.get("/health")
 def health():
@@ -249,6 +291,13 @@ def route(req: RouteIn):
             return RouteOut(routing_decision="symbolic", teacher_id=teacher_id, normalized_input=normalized)
         except HTTPException as he:
             # If normalization fails, still route but flag missing fields
+            return RouteOut(routing_decision="symbolic", teacher_id=teacher_id, notes=f"normalization_failed: {he.detail}")
+    if intent == "transfer_tax":
+        teacher_id = "transfer_tax_v1"
+        try:
+            normalized = normalize_for_teacher(teacher_id, req.query, req.metadata or {})
+            return RouteOut(routing_decision="symbolic", teacher_id=teacher_id, normalized_input=normalized)
+        except HTTPException as he:
             return RouteOut(routing_decision="symbolic", teacher_id=teacher_id, notes=f"normalization_failed: {he.detail}")
     # no known symbolic teacher; let upstream decide: llm or create_teacher
     return RouteOut(routing_decision="llm", notes="no matching symbolic teacher")

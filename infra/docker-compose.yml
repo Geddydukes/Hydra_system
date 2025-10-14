@@ -4,7 +4,11 @@ services:
       context: ..
       dockerfile: infra/Dockerfile.router
     ports: ["8000:8000"]
-    env_file: .env
+    env_file: ../.env
+    environment:
+      REGISTRY_ROOT: /app/registry
+    volumes:
+      - ../registry:/app/registry:ro
     depends_on: [teachers, llm]
 
   teachers:
@@ -19,4 +23,14 @@ services:
       context: ..
       dockerfile: infra/Dockerfile.llm
     ports: ["8002:8002"]
-    env_file: .env
+    env_file: ../.env
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.gateway
+    ports: ["8006:8006"]
+    env_file: ../.env
+    environment:
+      ROUTER_URL: http://router:8000
+    depends_on: [router]

@@ -91,11 +91,67 @@ def _complete_google(prompt: str) -> str:
         return data.get("candidates",[{}])[0].get("content",{}).get("parts",[{}])[0].get("text","")
 
 def _complete_mock(prompt: str) -> str:
-    # safe deterministic stub for tests
-    if '"mode":"normalize"' in prompt:
-        return '{"noi":120000,"annual_debt_service":100000}'
-    if '"mode":"explain"' in prompt:
-        return '{"explanation":"The loan fails because DSCR 1.14 < 1.20."}'
+    """
+    Deterministic mock that respects the prompt:
+    - For normalize: return empty dict (forces router's deterministic path unless needed).
+    - For explain: parse the Trace JSON, derive explanation with only trace numbers.
+    """
+    try:
+        if '"mode":"normalize"' in prompt:
+            # return empty so router keeps deterministic normalization or falls back explicitly when needed
+            return "{}"
+
+        if '"mode":"explain"' in prompt:
+            # Extract the Trace JSON block after "Trace:\n"
+            trace_json = None
+            marker = "Trace:\n"
+            idx = prompt.find(marker)
+            if idx != -1:
+                blob = prompt[idx + len(marker):].strip()
+                # find the first bracketed JSON structure (array or object)
+                start = blob.find("[")
+                if start == -1:
+                    start = blob.find("{")
+                end = blob.rfind("]") if "[" in blob else blob.rfind("}")
+                if start != -1 and end != -1 and end > start:
+                    trace_json = blob[start:end+1]
+
+            if trace_json:
+                import json as _json
+                trace = _json.loads(trace_json)
+                # Expect a list of rule results; take the first
+                first = trace[0] if isinstance(trace, list) and trace else {}
+                passed = bool(first.get("passed"))
+                val = first.get("value")
+                thr = first.get("threshold")
+                # Try to coerce to float for consistent formatting
+                try:
+                    val_f = float(val) if val is not None else None
+                except Exception:
+                    val_f = None
+                try:
+                    thr_f = float(thr) if thr is not None else None
+                except Exception:
+                    thr_f = None
+
+                if val_f is not None and thr_f is not None:
+                    if passed:
+                        return _json.dumps({
+                            "explanation": f"The loan passes because DSCR {val_f:.2f} \u2265 {thr_f:.2f}."
+                        })
+                    else:
+                        return _json.dumps({
+                            "explanation": f"The loan fails because DSCR {val_f:.2f} < {thr_f:.2f}."
+                        })
+
+            # Fallback if we couldn't parse — safe, minimal text with no numbers
+            return '{"explanation":"The decision follows the rule in the trace."}'
+
+    except Exception:
+        # Last-resort safe fallback
+        return '{"explanation":"The decision follows the rule in the trace."}'
+
+    # Default (shouldn’t reach here)
     return '{"note":"mock_response"}'
 
 # ---- public ----

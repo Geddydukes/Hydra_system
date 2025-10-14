@@ -1,0 +1,20 @@
+{
+  "teacher_id": "transfer_tax_v1",
+  "domain": "tax",
+  "type": "rules",
+  "inputs_schema": {
+    "sale_price": { "type": "number", "units": "USD" },
+    "rate_pct": { "type": "number", "units": "percent" }
+  },
+  "computed": {
+    "rate": "rate_pct / 100.0",
+    "transfer_tax": "sale_price * rate"
+  },
+  "rules": [
+    { "id": "TAX_NON_NEGATIVE", "expr": "transfer_tax >= 0", "severity": "fail" }
+  ],
+  "explanation_fields": ["sale_price", "rate_pct", "transfer_tax"],
+  "jurisdictions": ["US"],
+  "effective_date": "2025-01-01",
+  "metadata": { "source": "Flat transfer tax example" }
+}

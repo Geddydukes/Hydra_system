@@ -1,0 +1,43 @@
+name: hydra-ci
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test deps
+        run: pip install -r tests/requirements.txt
+
+      - name: Start stack
+        run: docker compose -f infra/docker-compose.yml up -d --build
+
+      - name: Wait for health
+        run: |
+          for i in {1..60}; do
+            (curl -sf http://localhost:8000/health >/dev/null) && break || sleep 1
+          done
+          for i in {1..60}; do
+            (curl -sf http://localhost:8001/health >/dev/null) && break || sleep 1
+          done
+          for i in {1..60}; do
+            (curl -sf http://localhost:8002/health >/dev/null) && break || sleep 1
+          done
+
+      - name: Run tests
+        env:
+          ROUTER_URL: http://localhost:8000
+          TEACHERS_URL: http://localhost:8001
+          LLM_URL: http://localhost:8002
+        run: pytest -q
+
+      - name: Teardown
+        if: always()
+        run: docker compose -f infra/docker-compose.yml down
