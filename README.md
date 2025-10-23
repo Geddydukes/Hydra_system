@@ -1,115 +1,285 @@
-# 🐉 Hydra — Neuro-Symbolic Hybrid Reasoning System
+# 🐉 Hydra Systems — Explainable AI Infrastructure
 
-Hydra is a **self-expanding hybrid AI platform** that combines **deterministic symbolic reasoning** with **large language models** (LLMs).
+**Hydra Systems** is an enterprise platform for building, deploying, and governing **symbolic + LLM hybrid AI systems**. It enables organizations to codify their internal reasoning processes into secure, auditable logic — transforming opaque AI decisions into **transparent, traceable outcomes**.
 
-It routes tasks intelligently between **symbolic teachers** (for precision and explainability) and **LLMs** (for flexibility), and uses **reinforcement learning** to gradually teach the model from symbolic outputs — closing the loop over time.
-
-When no symbolic system exists for a task, Hydra’s **Symbolic Engineer LLM (SELLM)** automatically drafts one, proposes it for review, and — once approved — integrates it into the reasoning graph. Meanwhile, a **Watcher + Policy Parser pipeline** monitors external sources (laws, schemas, APIs) to keep symbolic rules aligned with the real world.
-
-Hydra is designed for **high-stakes, rule-heavy domains** like finance, real estate, and policy — where **LLMs alone are too unreliable**, and **pure symbolic systems are too brittle**.
+Hydra is built atop the **Feather Agent Framework** and uses **Hydra Cloud**, **Feather Runtime**, and **Hydra Connectors** to orchestrate symbolic reasoning, LLM comparison, and reinforcement learning in real-time.
 
 ---
 
-## ✨ Key Capabilities
+## 🧠 Mission
 
-- 🧠 **Router** — Classifies queries and dispatches to symbolic teachers, LLM, or hybrid arbitration.
-- 📚 **Symbolic Teachers** — Lightweight, deterministic reasoning modules with structured traces and tests.
-- 🏗 **SELLM** — LLM that creates, repairs, and patches symbolic teachers using RAG and internal tests.
-- 🛰 **Auto-Update Pipeline** — Watches laws, schemas, and APIs; generates teacher patches automatically.
-- 🔄 **RL Training Loop** — Uses symbolic outputs as reward signals to post-train LLMs for improved explanation fidelity and fallback reasoning.
-- 🧾 **Governance & Audit** — Immutable logs, human review gates, drift detection, and compliance hooks.
-- 🌱 **Self-Expanding Architecture** — Over time, Hydra grows a library of domain-specific symbolic systems while training its neural backbone to emulate them.
+> **Hydra's mission** is to make enterprise AI explainable, secure, and composable — where every decision can be audited, reasoned about, and improved.
+
+Most AI pilots fail because they lack:
+- **Explainability** — Can't understand how decisions are made
+- **Governance** — No oversight or compliance controls  
+- **Integration** — Doesn't work with existing systems
+
+Hydra solves this by combining **symbolic AI** (explicit logic) with **LLM reasoning** (pattern-based inference) inside a unified drag-and-drop environment.
 
 ---
 
-## 🧱 Architecture Overview
+## ⚙️ Core Components
 
-```text
-User Query
-    │
-    ▼
-┌────────────┐
-│  Router    │
-└────┬───────┘
-     │
- ┌───▼─────┬─────────────┐
- │Symbolic │   LLM       │
- │Teacher  │  Reasoning  │
- └───┬─────┴─────────────┘
-     ▼
- Explanation Layer  →  Logs → RL Training
-     │
-     ▼
- Registry ← SELLM ← Policy Watchers
-Hydra’s core innovation is treating symbolic systems as both inference engines and training signal generators, enabling continuous alignment between evolving rules and neural models.
+| Component | Description |
+|------------|-------------|
+| **Hydra Cloud** | SaaS control plane and visual builder (Next.js + ReactFlow) |
+| **Feather Runtime** | Customer-side execution engine (Node.js / Docker) |
+| **Hydra Connectors** | Secure adapters for APIs, databases, and systems |
+| **Symbolic Engine** | JSONLogic-based interpreter with audit trace |
+| **RL Evaluator** | Compares LLM outputs vs. symbolic truth for reinforcement |
+| **Audit Layer** | Cryptographically signed trace logs for compliance |
 
-📂 Documentation
-All system specifications are in /docs:
+---
 
-File	Description
-01_PRD.md	Product vision, use cases, and success metrics
-02_System_Architecture.md	High-level architecture & component interactions
-03_Technical_Spec.md	APIs, data schemas, and algorithms
-04_Teacher_Spec_Template.md	Standard DSL & testing for symbolic teachers
-05_SELLM_Spec.md	Spec for the Symbolic Engineer LLM
-06_AutoUpdate_Pipeline.md	Watcher + patching pipeline
-07_RL_Training_Loop.md	Symbolic → neural post-training loop
-08_Governance_Audit.md	Governance model, audit logs, compliance hooks
-09_Roadmap.md	Development roadmap across V1–V3 phases
+## 🧩 Architecture Overview
 
-🧭 Roadmap Snapshot
-Phase	Focus	Key Outcomes
-V1	Core Hybrid Routing	Deterministic teachers + router + explanation
-V2	Self-Expansion	SELLM, auto-update, RL loop
-V3	Continuous Intelligence	Shadow RL, drift detection, domain scaling
+```mermaid
+graph TB
+    A[User] --> B[Hydra Cloud Frontend]
+    B --> C[Visual Flow Builder]
+    C --> D[Flow Specification]
+    D --> E[Feather Runtime]
+    E --> F[Symbolic Engine]
+    F --> G[Hydra Connectors]
+    G --> H[Customer Systems]
+    F --> I[Audit Logger]
+    I --> J[Trace Viewer]
+    J --> B
+    E --> K[RL Evaluator]
+    K --> L[Model Comparison]
+    L --> B
+```
 
-See the full roadmap for details.
+**Hydra Cloud** never handles raw customer data — only metadata and hashes of symbolic evaluations.
 
-⚡ Potential Applications
-Real estate underwriting (DSCR, LTV, NOI policies)
+---
 
-Tax calculations and compliance checks
+## 🧰 Quick Start
 
-Regulatory reporting pipelines
+### Prerequisites
+- Node.js ≥ 20
+- Docker & Docker Compose
+- pnpm (preferred) or npm/yarn
+- PostgreSQL (for audit logs)
 
-Environmental / zoning rule enforcement
+### Clone Repository
+```bash
+git clone https://github.com/Geddydukes/hydra-systems.git
+cd hydra-systems
+pnpm install
+```
 
-Policy simulation and proactive alignment
+### Run Local Development Stack
+```bash
+# Launch Hydra Cloud
+pnpm run dev
 
-🧠 Why This Matters
-Hydra directly addresses two of the biggest weaknesses in current AI systems:
+# Launch Feather Runtime (sandbox)
+docker compose up feather-runtime
+```
 
-❌ LLMs are non-deterministic → unreliable for rules, compliance, and explainability.
+Visit http://localhost:3000 to access Hydra Cloud.
 
-❌ Symbolic systems are brittle → expensive to maintain, hard to scale.
+---
 
-By fusing the two — and letting symbolic systems teach the LLM over time — Hydra becomes:
+## 📂 Complete Documentation
 
-✅ Deterministic where needed,
+All comprehensive documentation is organized in the [`/docs`](docs/) folder:
 
-✅ Flexible where helpful,
+### Core Platform Documentation
+- **[Compatibility Layer](docs/01_Compatibility_Layer.md)** — Unified compatibility layer & frontend integration
+- **[Framework Customizations](docs/02_Framework_Customizations.md)** — Unified framework architecture & frontend integration  
+- **[Platform Architecture](docs/03_Platform_Architecture.md)** — Complete platform architecture & extensions
+- **[Implementation Guide](docs/04_Implementation_Guide.md)** — Complete implementation guide with phases
+- **[Migration Plan](docs/05_Migration_Plan.md)** — Complete platform migration plan
+- **[Testing Strategy](docs/06_Testing_Strategy.md)** — Comprehensive testing strategy
 
-✅ Continuously improving,
+### Frontend Documentation
+- **[Frontend Development Plan](docs/07_Frontend_Development_Plan.md)** — Frontend development phases and roadmap
+- **[User Flow](docs/08_User_Flow.md)** — Complete user journey and workflow
+- **[Frontend System Architecture](docs/09_Frontend_System_Architecture.md)** — Frontend system architecture
+- **[Frontend README](docs/10_Frontend_README.md)** — Frontend overview and quick start
 
-✅ Auditable end-to-end.
+### Framework Documentation
+- **[API Reference](docs/api-reference.md)** — Feather-agent API reference
+- **[Deployment](docs/deployment.md)** — Deployment guide
+- **[Examples](docs/examples.md)** — Usage examples
+- **[Quick Start](docs/quick-start.md)** — Quick start guide
 
-🧰 Status
-🟡 In Design Phase
-This repository currently contains system specifications, architectural plans, and development roadmap.
-Implementation will follow the phased roadmap outlined in 09_Roadmap.md.
+**📖 [View Complete Documentation Index](docs/README.md)**
 
-📝 Author
-Geddy Dukes — Technical Program Manager, AI/ML systems builder, and hybrid symbolic/neural architecture researcher.
+---
 
-🪄 Future Directions
-Multi-jurisdiction symbolic rule engines
+## 🔧 Example Workflow
 
-Automated evaluation harness for teacher creation
+1. **Create a Flow**
+```yaml
+flow:
+  - fetch: crm.getCustomerData
+  - rule: DSCR_MIN_1_20
+  - if_pass: notify("Loan pre-approved")
+  - if_fail: escalate("Manual review")
+```
 
-Integration SDK for external systems
+2. **Register a Connector**
+```bash
+docker run hydra-connector --token=$HYDRA_TOKEN
+```
 
-Open “teacher marketplace” for community symbolic modules
+3. **Execute a Test**
+```bash
+curl -X POST localhost:8080/run \
+  -H 'content-type: application/json' \
+  -d '{"noi": 120000, "debt_service": 100000}'
+```
 
-📜 License
-TBD — likely MIT or Apache 2.0.
+**Response:**
+```json
+{
+  "verdict": "PASS",
+  "dscr": 1.2,
+  "trace": ["Rule DSCR_MIN_1_20 met threshold"],
+  "timestamp": "2025-10-20T18:22Z"
+}
+```
+
+---
+
+## 🔒 Security Model
+
+| Layer | Responsibility | Mechanism |
+|-------|---------------|-----------|
+| Hydra Cloud | Control plane only | TLS 1.3, OAuth2, RBAC |
+| Feather Runtime | Execution sandbox | Docker isolation, ephemeral volumes |
+| Connectors | Scoped data access | JWT auth, local logging |
+| Audit Layer | Trace integrity | SHA-256 signed hashes |
+
+**Sensitive data never leaves the customer's infrastructure.**  
+Hydra Cloud stores only job IDs, rule versions, and execution summaries.
+
+---
+
+## 🧠 Symbolic AI + LLM Reinforcement
+
+Hydra integrates LLM evaluation loops that compare symbolic outputs with generative model predictions:
+
+1. **Symbolic reasoning** executes ground-truth rules
+2. **LLM predicts** an outcome for the same case  
+3. **Disagreements logged** as preference pairs
+4. **Reinforcement Learning** (RLAIF or DPO) fine-tunes the model
+5. **Over time**, LLM accuracy converges toward the symbolic baseline
+
+This enables machine-verifiable reasoning that improves continuously.
+
+---
+
+## 📊 Observability
+
+Hydra emits OpenTelemetry-compatible structured logs:
+
+```json
+{
+  "job_id": "abc123",
+  "rule_id": "DSCR_MIN_1_20", 
+  "result": "PASS",
+  "value": 1.23,
+  "runtime": 45,
+  "timestamp": "2025-10-20T10:45:12Z"
+}
+```
+
+Supports exporters for:
+- Datadog
+- Grafana  
+- ELK Stack
+- S3 / Glacier Archival
+
+---
+
+## 🧱 Repository Structure
+
+```
+hydra-systems/
+├── apps/
+│   ├── hydra-cloud/         # Next.js SaaS frontend
+│   └── feather-runtime/     # Node.js runtime engine
+├── packages/
+│   ├── symbolic-engine/     # JSONLogic interpreter + DSL compiler
+│   ├── connectors/          # SDKs for APIs & databases
+│   └── shared/              # Utils, schema validators, types
+├── docs/                    # Complete documentation
+├── tests/                   # Test suites
+├── docker-compose.yml
+└── README.md
+```
+
+---
+
+## 🧩 Deployment Options
+
+| Mode | Description | Example Users |
+|------|-------------|---------------|
+| **SaaS** | Hydra Cloud hosts control plane; runtime external | Startups, SMBs |
+| **Hybrid** | Cloud builder + on-prem Feather Runtime | Fintechs, Legaltech |
+| **On-Prem** | Full stack deployed internally | Healthcare, Banking |
+
+Deployment managed via Docker, Kubernetes, or Terraform.
+
+---
+
+## 🧭 Roadmap
+
+| Phase | Milestone | Target |
+|-------|-----------|--------|
+| **Alpha** (Q4 2025) | Symbolic engine + Cloud builder | ✅ Complete |
+| **Beta** (Q1 2026) | Hybrid deployment + audit system | In Progress |
+| **v1.0 Launch** (Q2 2026) | Marketplace + RL loop | Planned |
+| **v2.0** (2027) | Multi-agent orchestration & self-optimizing rules | Planned |
+
+---
+
+## 🧩 Example Use Cases
+
+- **Finance**: Loan eligibility & credit risk engines
+- **Legal**: Contract clause validation  
+- **Healthcare**: Treatment protocol compliance
+- **Manufacturing**: Safety check automation
+- **GovTech**: Policy audit and decision justification
+
+---
+
+## 📈 Market Context
+
+- **MIT Tech Review (2025)**: "95% of GenAI pilots fail to deliver ROI."
+- **S&P Global (2025)**: "42% of firms abandon AI within a year due to poor governance."
+- **Gartner (2025)**: "60% of AI projects will be canceled without explainability."
+- **McKinsey (2025)**: "80% of enterprises will require AI audit layers by 2027."
+
+Hydra directly addresses these pain points by delivering explainable AI infrastructure as a product.
+
+---
+
+## 🤝 Contributing
+
+Hydra welcomes contributions from the open-source community.
+
+### Development
+```bash
+pnpm run dev
+pnpm run test
+```
+
+### Guidelines
+- Use conventional commits (`feat:`, `fix:`, `chore:`)
+- PRs must include updated tests and documentation
+- Follow the Hydra Code of Conduct
+
+---
+
+## 📜 License
+
+Hydra Systems © 2025 Geddy Dukes  
+Licensed under the Elastic License 2.0 (ELv2).  
+Commercial use available via Hydra Cloud Enterprise.
 ```
