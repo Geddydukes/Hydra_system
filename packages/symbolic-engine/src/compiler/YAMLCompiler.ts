@@ -67,6 +67,10 @@ export class YAMLCompiler {
         action: rule.action,
         priority: rule.priority || 0,
         version: rule.version || '1.0.0',
+        dependsOn: rule.dependsOn,
+        continueOnFail: rule.continueOnFail,
+        recovery: rule.recovery,
+        optimization: rule.optimization,
         metadata: rule.metadata
       };
     });

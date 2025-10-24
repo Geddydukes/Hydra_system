@@ -1,6 +1,6 @@
 import { HydraAgent } from './HydraAgent';
 import { ExecutionContext, AgentResult } from '../types';
-import { JSONLogicEngine, Rule, HydraFlow } from '@hydra/symbolic-engine';
+import { JSONLogicEngine, Rule, HydraFlow, AuditLogService } from '@hydra/symbolic-engine';
 
 export class RouterAgent extends HydraAgent {
   private engine: JSONLogicEngine;
@@ -118,5 +118,9 @@ export class RouterAgent extends HydraAgent {
 
   clearCache(): void {
     this.engine.clearCache();
+  }
+
+  setAuditLogService(auditLog: AuditLogService): void {
+    this.engine.setAuditLogService(auditLog);
   }
 }

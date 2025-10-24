@@ -4,8 +4,8 @@ from typing import Any, Dict, Iterable
 import json, re, math
 
 # Absolute imports so the module works when /app isn't a package
-from client import llm_structured
-from prompts import EXPLAIN_PROMPT, NORMALIZE_PROMPT  # NORMALIZE may be used elsewhere
+from .client import llm_structured
+from .prompts import EXPLAIN_PROMPT, NORMALIZE_PROMPT  # NORMALIZE may be used elsewhere
 
 app = FastAPI(title="Hydra LLM", version="0.1.0")
 

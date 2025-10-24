@@ -2,18 +2,37 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import { RouterAgent, SELLMAgent } from '@hydra/feather-agent';
+import {
+  RouterAgent,
+  SELLMAgent,
+  ProjectManagementAgent,
+  AuditAgent,
+  PerformanceAgent,
+  ProjectSpec,
+  DeploymentEnvironment
+} from '@hydra/feather-agent';
 import { RestConnector, DatabaseConnector } from '@hydra/connectors';
 import { createLogger } from './logger';
 import { JobQueue } from './jobs/JobQueue';
 import { SandboxExecutor } from './runtime/SandboxExecutor';
+import { TaskManager } from './runtime/TaskManager';
+import { DeploymentManager } from './deployment/DeploymentManager';
+import { HealthMonitor } from './deployment/HealthMonitor';
+import { AuditLogService } from '@hydra/symbolic-engine';
 
 export class FeatherRuntime {
   private app: express.Application;
   private routerAgent: RouterAgent;
   private sellmAgent: SELLMAgent;
+  private projectAgent: ProjectManagementAgent;
+  private auditAgent: AuditAgent;
+  private performanceAgent: PerformanceAgent;
   private jobQueue: JobQueue;
   private sandboxExecutor: SandboxExecutor;
+  private taskManager: TaskManager;
+  private deploymentManager: DeploymentManager;
+  private healthMonitor: HealthMonitor;
+  private auditLog: AuditLogService;
   private logger = createLogger('FeatherRuntime');
   private connectors: Map<string, any> = new Map();
 
@@ -21,8 +40,16 @@ export class FeatherRuntime {
     this.app = express();
     this.routerAgent = new RouterAgent();
     this.sellmAgent = new SELLMAgent();
+    this.projectAgent = new ProjectManagementAgent();
+    this.auditLog = new AuditLogService();
+    this.auditAgent = new AuditAgent({}, this.auditLog);
+    this.performanceAgent = new PerformanceAgent();
+    this.routerAgent.setAuditLogService(this.auditLog);
     this.jobQueue = new JobQueue();
     this.sandboxExecutor = new SandboxExecutor();
+    this.taskManager = new TaskManager(this.jobQueue, this.sandboxExecutor);
+    this.deploymentManager = new DeploymentManager(this.projectAgent);
+    this.healthMonitor = new HealthMonitor(this.performanceAgent);
     
     this.setupMiddleware();
     this.setupRoutes();
@@ -159,6 +186,224 @@ export class FeatherRuntime {
         });
       } catch (error) {
         this.logger.error('Trace clearing error', error);
+        res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    // Project management routes
+    this.app.post('/projects', (req, res) => {
+      try {
+        const project = this.deploymentManager.createProject(req.body as ProjectSpec);
+        res.status(201).json({ success: true, project, timestamp: new Date().toISOString() });
+      } catch (error) {
+        this.logger.error('Project creation failed', error);
+        res.status(400).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    this.app.patch('/projects/:projectId', (req, res) => {
+      try {
+        const { changes = {}, changelog } = req.body;
+        const project = this.deploymentManager.updateProject(req.params.projectId, changes, changelog);
+        res.json({ success: true, project, timestamp: new Date().toISOString() });
+      } catch (error) {
+        this.logger.error('Project update failed', error);
+        res.status(400).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    this.app.post('/projects/:projectId/deploy', (req, res) => {
+      try {
+        const { environment, changelog } = req.body;
+        const record = this.deploymentManager.deployProject(
+          req.params.projectId,
+          environment as DeploymentEnvironment,
+          changelog
+        );
+        res.json({ success: true, deployment: record, timestamp: new Date().toISOString() });
+      } catch (error) {
+        this.logger.error('Project deployment failed', error);
+        res.status(400).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    this.app.post('/projects/:projectId/rollback', (req, res) => {
+      try {
+        const record = this.deploymentManager.rollbackProject(req.params.projectId, req.body.version);
+        res.json({ success: true, deployment: record, timestamp: new Date().toISOString() });
+      } catch (error) {
+        this.logger.error('Project rollback failed', error);
+        res.status(400).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    this.app.get('/projects/:projectId', (req, res) => {
+      try {
+        const summary = this.deploymentManager.getSummary(req.params.projectId);
+        res.json({ success: true, summary, timestamp: new Date().toISOString() });
+      } catch (error) {
+        this.logger.error('Project summary failed', error);
+        res.status(404).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    this.app.get('/projects/:projectId/health', (req, res) => {
+      try {
+        const snapshots = this.deploymentManager.getHealth(req.params.projectId, req.query.environment as string | undefined);
+        res.json({ success: true, snapshots, timestamp: new Date().toISOString() });
+      } catch (error) {
+        res.status(404).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    this.app.post('/projects/:projectId/health', (req, res) => {
+      try {
+        const snapshot = this.deploymentManager.recordHealthSnapshot(
+          req.params.projectId,
+          req.body.environment,
+          req.body.status,
+          req.body.metrics,
+          req.body.notes
+        );
+        res.status(201).json({ success: true, snapshot, timestamp: new Date().toISOString() });
+      } catch (error) {
+        res.status(400).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    // Audit routes
+    this.app.post('/audit/traces', (req, res) => {
+      try {
+        const entry = this.auditAgent.recordTrace(req.body.trace, req.body.metadata);
+        res.status(201).json({ success: true, entry, timestamp: new Date().toISOString() });
+      } catch (error) {
+        res.status(400).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    this.app.get('/audit/report', (req, res) => {
+      const report = this.auditAgent.getComplianceReport();
+      res.json({ success: true, report, timestamp: new Date().toISOString() });
+    });
+
+    // Performance metrics
+    this.app.post('/metrics', (req, res) => {
+      try {
+        const metric = this.performanceAgent.recordMetric(req.body.metric, req.body.value, req.body.tags);
+        res.status(201).json({ success: true, metric, timestamp: new Date().toISOString() });
+      } catch (error) {
+        res.status(400).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    this.app.get('/metrics/:metric/summary', (req, res) => {
+      const summary = this.performanceAgent.getSummary(req.params.metric);
+      res.json({ success: true, summary, timestamp: new Date().toISOString() });
+    });
+
+    // Task management
+    this.app.post('/runtime/tasks/sandbox', async (req, res) => {
+      try {
+        const task = await this.taskManager.runSandboxTask(req.body.code, req.body.language, req.body.input);
+        res.status(201).json({ success: true, task, timestamp: new Date().toISOString() });
+      } catch (error) {
+        res.status(400).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    this.app.post('/runtime/tasks/queue', async (req, res) => {
+      try {
+        const task = await this.taskManager.scheduleJob(req.body.type, req.body.payload);
+        res.status(202).json({ success: true, task, timestamp: new Date().toISOString() });
+      } catch (error) {
+        res.status(400).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    this.app.get('/runtime/tasks', (req, res) => {
+      res.json({ success: true, tasks: this.taskManager.getTasks(), metrics: this.taskManager.getMetrics(), timestamp: new Date().toISOString() });
+    });
+
+    this.app.get('/runtime/tasks/:taskId', async (req, res) => {
+      try {
+        const task = await this.taskManager.refreshJob(req.params.taskId) || this.taskManager.getTask(req.params.taskId);
+        if (!task) {
+          return res.status(404).json({
+            success: false,
+            error: 'Task not found',
+            timestamp: new Date().toISOString()
+          });
+        }
+        res.json({ success: true, task, timestamp: new Date().toISOString() });
+      } catch (error) {
+        res.status(400).json({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+
+    this.app.get('/runtime/health', async (req, res) => {
+      try {
+        const jobCounts = await this.jobQueue.getJobCounts();
+        const metrics = {
+          cpu: Number(req.query.cpu || 0.35),
+          memory: Number(req.query.memory || 0.42),
+          queueLatency: jobCounts.waiting * 50
+        };
+        const snapshot = this.healthMonitor.recordSnapshot(metrics, 'Automated health check');
+        res.json({ success: true, snapshot, timestamp: new Date().toISOString() });
+      } catch (error) {
+        this.logger.error('Health check failed', error);
         res.status(500).json({
           success: false,
           error: error instanceof Error ? error.message : String(error),
@@ -320,5 +565,21 @@ export class FeatherRuntime {
 
   getApp(): express.Application {
     return this.app;
+  }
+
+  getProjectAgent(): ProjectManagementAgent {
+    return this.projectAgent;
+  }
+
+  getAuditAgent(): AuditAgent {
+    return this.auditAgent;
+  }
+
+  getPerformanceAgent(): PerformanceAgent {
+    return this.performanceAgent;
+  }
+
+  getTaskManager(): TaskManager {
+    return this.taskManager;
   }
 }

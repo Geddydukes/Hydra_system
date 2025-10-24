@@ -3,22 +3,27 @@ import request from 'supertest';
 import { FeatherRuntime } from '../src';
 
 // Mock dependencies
-vi.mock('@hydra/feather-agent', () => ({
-  RouterAgent: vi.fn().mockImplementation(() => ({
-    execute: vi.fn().mockResolvedValue({
-      success: true,
-      result: { type: 'rule', result: [{ ruleId: 'test-rule', result: true }] }
-    }),
-    getTraces: vi.fn().mockReturnValue([]),
-    clearTraces: vi.fn()
-  })),
-  SELLMAgent: vi.fn().mockImplementation(() => ({
-    execute: vi.fn().mockResolvedValue({
-      success: true,
-      result: { success: true, rule: { id: 'new-rule', name: 'Test Rule' } }
-    })
-  }))
-}));
+vi.mock('@hydra/feather-agent', () => {
+  const actual = vi.requireActual<typeof import('@hydra/feather-agent')>('@hydra/feather-agent');
+  return {
+    ...actual,
+    RouterAgent: vi.fn().mockImplementation(() => ({
+      execute: vi.fn().mockResolvedValue({
+        success: true,
+        result: { type: 'rule', result: [{ ruleId: 'test-rule', result: true }] }
+      }),
+      getTraces: vi.fn().mockReturnValue([]),
+      clearTraces: vi.fn(),
+      addEventListener: vi.fn()
+    })),
+    SELLMAgent: vi.fn().mockImplementation(() => ({
+      execute: vi.fn().mockResolvedValue({
+        success: true,
+        result: { success: true, rule: { id: 'new-rule', name: 'Test Rule' } }
+      })
+    }))
+  };
+});
 
 vi.mock('@hydra/connectors', () => ({
   RestConnector: vi.fn().mockImplementation(() => ({
@@ -41,10 +46,19 @@ vi.mock('bull', () => ({
   default: vi.fn().mockImplementation(() => ({
     process: vi.fn(),
     on: vi.fn(),
-    add: vi.fn().mockResolvedValue({ id: 'job-123' }),
-    getJob: vi.fn(),
+    add: vi.fn().mockResolvedValue({
+      id: 'job-123',
+      getState: vi.fn().mockResolvedValue('completed'),
+      finished: vi.fn().mockResolvedValue({ success: true }),
+      failedReason: undefined
+    }),
+    getJob: vi.fn().mockResolvedValue({
+      id: 'job-123',
+      getState: vi.fn().mockResolvedValue('completed'),
+      finished: vi.fn().mockResolvedValue({ success: true })
+    }),
     getJobs: vi.fn().mockResolvedValue([]),
-    getJobCounts: vi.fn().mockResolvedValue({ waiting: 0, active: 0, completed: 0, failed: 0 }),
+    getJobCounts: vi.fn().mockResolvedValue({ waiting: 1, active: 0, completed: 5, failed: 0 }),
     pause: vi.fn().mockResolvedValue(undefined),
     resume: vi.fn().mockResolvedValue(undefined),
     clean: vi.fn().mockResolvedValue(undefined),
@@ -57,10 +71,20 @@ vi.mock('dockerode', () => ({
     ping: vi.fn().mockResolvedValue('OK'),
     createContainer: vi.fn().mockResolvedValue({
       start: vi.fn().mockResolvedValue(undefined),
-      logs: vi.fn().mockResolvedValue({
-        on: vi.fn(),
-        end: vi.fn()
-      }),
+      logs: vi.fn().mockResolvedValue((() => {
+        const stream = {
+          on: vi.fn((event: string, handler: (...args: any[]) => void) => {
+            if (event === 'data') {
+              setTimeout(() => handler(Buffer.from('execution output')), 0);
+            }
+            if (event === 'end') {
+              setTimeout(() => handler(), 0);
+            }
+            return stream;
+          })
+        } as any;
+        return stream;
+      })()),
       inspect: vi.fn().mockResolvedValue({ State: { ExitCode: 0 } }),
       remove: vi.fn().mockResolvedValue(undefined),
       kill: vi.fn().mockResolvedValue(undefined)
@@ -146,6 +170,117 @@ describe('FeatherRuntime', () => {
     expect(response.body.success).toBe(true);
     expect(response.body.message).toBe('Traces cleared');
     expect(response.body.timestamp).toBeDefined();
+  });
+
+  it('manages project lifecycles through deployment endpoints', async () => {
+    const projectResponse = await request(runtime.getApp())
+      .post('/projects')
+      .send({ name: 'Underwriting', domain: 'finance' })
+      .expect(201);
+
+    const projectId = projectResponse.body.project.id;
+    expect(projectId).toBeDefined();
+
+    await request(runtime.getApp())
+      .post(`/projects/${projectId}/deploy`)
+      .send({
+        environment: { name: 'staging', url: 'https://staging.hydra.systems' },
+        changelog: 'Initial deployment'
+      })
+      .expect(200);
+
+    await request(runtime.getApp())
+      .post(`/projects/${projectId}/health`)
+      .send({
+        environment: 'staging',
+        status: 'healthy',
+        metrics: { latency: 120 }
+      })
+      .expect(201);
+
+    const summaryResponse = await request(runtime.getApp())
+      .get(`/projects/${projectId}`)
+      .expect(200);
+
+    expect(summaryResponse.body.summary.project.id).toBe(projectId);
+
+    const healthResponse = await request(runtime.getApp())
+      .get(`/projects/${projectId}/health?environment=staging`)
+      .expect(200);
+
+    expect(healthResponse.body.snapshots.length).toBeGreaterThan(0);
+  });
+
+  it('records audit traces and runtime metrics', async () => {
+    const trace = {
+      id: 'trace-test',
+      ruleId: 'rule-123',
+      timestamp: new Date().toISOString(),
+      input: { amount: 200 },
+      output: true,
+      condition: { '>': [{ var: 'amount' }, 100] },
+      result: true,
+      executionTime: 4
+    };
+
+    await request(runtime.getApp())
+      .post('/audit/traces')
+      .send({ trace, metadata: { reviewer: 'qa' } })
+      .expect(201);
+
+    const reportResponse = await request(runtime.getApp())
+      .get('/audit/report')
+      .expect(200);
+
+    expect(reportResponse.body.report.totalEntries).toBeGreaterThan(0);
+
+    await request(runtime.getApp())
+      .post('/metrics')
+      .send({ metric: 'latency', value: 120 })
+      .expect(201);
+
+    const summaryResponse = await request(runtime.getApp())
+      .get('/metrics/latency/summary')
+      .expect(200);
+
+    expect(summaryResponse.body.summary.count).toBeGreaterThan(0);
+  });
+
+  it('runs sandbox tasks and tracks task state', async () => {
+    const taskResponse = await request(runtime.getApp())
+      .post('/runtime/tasks/sandbox')
+      .send({ code: "console.log('hello world')" })
+      .expect(201);
+
+    expect(taskResponse.body.task.status).toBe('completed');
+
+    const queueTask = await request(runtime.getApp())
+      .post('/runtime/tasks/queue')
+      .send({ type: 'execute-flow', payload: { flowId: 'flow-1' } })
+      .expect(202);
+
+    const taskId = queueTask.body.task.id;
+
+    const taskStatus = await request(runtime.getApp())
+      .get(`/runtime/tasks/${taskId}`)
+      .expect(200);
+
+    expect(taskStatus.body.task.id).toBe(taskId);
+
+    const taskList = await request(runtime.getApp())
+      .get('/runtime/tasks')
+      .expect(200);
+
+    expect(taskList.body.metrics).toBeDefined();
+  });
+
+  it('provides runtime health snapshots', async () => {
+    const response = await request(runtime.getApp())
+      .get('/runtime/health')
+      .expect(200);
+
+    expect(response.body.snapshot.status).toBeDefined();
+    expect(response.body.snapshot.metrics.queueLatency).toBeDefined();
   });
 
   it('should execute connector operation', async () => {
