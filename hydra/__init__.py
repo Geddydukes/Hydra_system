@@ -1,3 +1,17 @@
-"""Hydra Python packages."""
+"""Hydra Systems Python implementation."""
 
-__all__ = ["feather_agent"]
+from . import agents, audit, backend, connectors, deployment, feather_agent, frontend, llm, rl, runtime, symbolic
+
+__all__ = [
+    "agents",
+    "audit",
+    "backend",
+    "connectors",
+    "deployment",
+    "feather_agent",
+    "frontend",
+    "llm",
+    "rl",
+    "runtime",
+    "symbolic",
+]
