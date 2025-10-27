@@ -1,13 +1,15 @@
-"""End-to-end tests for the Python feather-agent runtime shim."""
+"""End-to-end tests exercising the feather runtime and registry."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
+import pytest
 from jsonschema import validate
 
-from hydra.feather_agent import FeatherRuntime, FeatherRuntimeResult
+from hydra.feather_agent import FeatherRuntime, FeatherRuntimeError, FeatherRuntimeResult
+from hydra.feather_agent.router import detect_intent
 
 
 def test_health(feather_runtime: FeatherRuntime) -> None:
@@ -43,6 +45,21 @@ def test_run_transfer_tax(feather_runtime: FeatherRuntime) -> None:
     tax = result.result["outputs"]["transfer_tax"]
     assert abs(tax - 2500.0) < 1e-6
     assert "Transfer tax computed deterministically" in result.explanation
+
+
+def test_feather_runtime_handles_missing_inputs_and_unknown_intent(feather_runtime: FeatherRuntime) -> None:
+    with pytest.raises(FeatherRuntimeError) as exc:
+        feather_runtime.execute("Compute DSCR", metadata={"noi": 100000})
+    assert "missing_required_inputs" in str(exc.value)
+
+    with pytest.raises(FeatherRuntimeError):
+        feather_runtime.execute("How much property tax should I pay?")
+
+
+def test_detect_intent_helper():
+    assert detect_intent("Need DSCR for loan") == "underwriting_dscr"
+    assert detect_intent("transfer tax for sale") == "transfer_tax"
+    assert detect_intent("unrelated question") is None
 
 
 def _assert_symbolic_success(result: FeatherRuntimeResult, teacher_id: str) -> None:
