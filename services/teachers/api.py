@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
-from evaluator.rules_engine import evaluate_dscr
-from evaluator.transfer_tax import evaluate_transfer_tax
+from .evaluator.rules_engine import evaluate_dscr
+from .evaluator.transfer_tax import evaluate_transfer_tax
 
 app = FastAPI(title="Hydra Teachers", version="0.1.0")
 
