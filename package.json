@@ -1,0 +1,11 @@
+{
+  "name": "hydra-systems",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "pytest",
+    "build": "python -m compileall hydra"
+  },
+  "devDependencies": {},
+  "description": "Helper npm scripts for compatibility with legacy tooling."
+}
