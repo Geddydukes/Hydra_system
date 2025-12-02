@@ -1,21 +1,21 @@
-# 🐉 Hydra Systems — Explainable AI Infrastructure
+# 🐉 Daedelos Systems — Explainable AI Infrastructure
 
-**Hydra Systems** is an enterprise platform for building, deploying, and governing **symbolic + LLM hybrid AI systems**. It enables organizations to codify their internal reasoning processes into secure, auditable logic — transforming opaque AI decisions into **transparent, traceable outcomes**.
+**Daedelos Systems** is an enterprise platform for building, deploying, and governing **symbolic + LLM hybrid AI systems**. It enables organizations to codify their internal reasoning processes into secure, auditable logic — transforming opaque AI decisions into **transparent, traceable outcomes**.
 
-Hydra is built atop the **Feather Agent Framework** and uses **Hydra Cloud**, **Feather Runtime**, and **Hydra Connectors** to orchestrate symbolic reasoning, LLM comparison, and reinforcement learning in real-time.
+Daedelos is built atop the **Feather Agent Framework** and uses **Daedelos Cloud**, **Feather Runtime**, and **Daedelos Connectors** to orchestrate symbolic reasoning, LLM comparison, and reinforcement learning in real-time.
 
 ---
 
 ## 🧠 Mission
 
-> **Hydra's mission** is to make enterprise AI explainable, secure, and composable — where every decision can be audited, reasoned about, and improved.
+> **Daedelos's mission** is to make enterprise AI explainable, secure, and composable — where every decision can be audited, reasoned about, and improved.
 
 Most AI pilots fail because they lack:
 - **Explainability** — Can't understand how decisions are made
 - **Governance** — No oversight or compliance controls  
 - **Integration** — Doesn't work with existing systems
 
-Hydra solves this by combining **symbolic AI** (explicit logic) with **LLM reasoning** (pattern-based inference) inside a unified drag-and-drop environment.
+Daedelos solves this by combining **symbolic AI** (explicit logic) with **LLM reasoning** (pattern-based inference) inside a unified drag-and-drop environment.
 
 ---
 
@@ -23,9 +23,9 @@ Hydra solves this by combining **symbolic AI** (explicit logic) with **LLM reaso
 
 | Component | Description |
 |------------|-------------|
-| **Hydra Cloud** | SaaS control plane and visual builder (Next.js + ReactFlow) |
+| **Daedelos Cloud** | SaaS control plane and visual builder (Next.js + ReactFlow) |
 | **Feather Runtime** | Customer-side execution engine (Node.js / Docker) |
-| **Hydra Connectors** | Secure adapters for APIs, databases, and systems |
+| **Daedelos Connectors** | Secure adapters for APIs, databases, and systems |
 | **Symbolic Engine** | JSONLogic-based interpreter with audit trace |
 | **RL Evaluator** | Compares LLM outputs vs. symbolic truth for reinforcement |
 | **Audit Layer** | Cryptographically signed trace logs for compliance |
@@ -36,12 +36,12 @@ Hydra solves this by combining **symbolic AI** (explicit logic) with **LLM reaso
 
 ```mermaid
 graph TB
-    A[User] --> B[Hydra Cloud Frontend]
+    A[User] --> B[Daedelos Cloud Frontend]
     B --> C[Visual Flow Builder]
     C --> D[Flow Specification]
     D --> E[Feather Runtime]
     E --> F[Symbolic Engine]
-    F --> G[Hydra Connectors]
+    F --> G[Daedelos Connectors]
     G --> H[Customer Systems]
     F --> I[Audit Logger]
     I --> J[Trace Viewer]
@@ -51,7 +51,7 @@ graph TB
     L --> B
 ```
 
-**Hydra Cloud** never handles raw customer data — only metadata and hashes of symbolic evaluations.
+**Daedelos Cloud** never handles raw customer data — only metadata and hashes of symbolic evaluations.
 
 ---
 
@@ -65,21 +65,21 @@ graph TB
 
 ### Clone Repository
 ```bash
-git clone https://github.com/Geddydukes/hydra-systems.git
-cd hydra-systems
+git clone https://github.com/Geddydukes/Daedelos-systems.git
+cd Daedelos-systems
 pnpm install
 ```
 
 ### Run Local Development Stack
 ```bash
-# Launch Hydra Cloud
+# Launch Daedelos Cloud
 pnpm run dev
 
 # Launch Feather Runtime (sandbox)
 docker compose up feather-runtime
 ```
 
-Visit http://localhost:3000 to access Hydra Cloud.
+Visit http://localhost:3000 to access Daedelos Cloud.
 
 ---
 
@@ -124,7 +124,7 @@ flow:
 
 2. **Register a Connector**
 ```bash
-docker run hydra-connector --token=$HYDRA_TOKEN
+docker run Daedelos-connector --token=$Daedelos_TOKEN
 ```
 
 3. **Execute a Test**
@@ -150,19 +150,19 @@ curl -X POST localhost:8080/run \
 
 | Layer | Responsibility | Mechanism |
 |-------|---------------|-----------|
-| Hydra Cloud | Control plane only | TLS 1.3, OAuth2, RBAC |
+| Daedelos Cloud | Control plane only | TLS 1.3, OAuth2, RBAC |
 | Feather Runtime | Execution sandbox | Docker isolation, ephemeral volumes |
 | Connectors | Scoped data access | JWT auth, local logging |
 | Audit Layer | Trace integrity | SHA-256 signed hashes |
 
 **Sensitive data never leaves the customer's infrastructure.**  
-Hydra Cloud stores only job IDs, rule versions, and execution summaries.
+Daedelos Cloud stores only job IDs, rule versions, and execution summaries.
 
 ---
 
 ## 🧠 Symbolic AI + LLM Reinforcement
 
-Hydra integrates LLM evaluation loops that compare symbolic outputs with generative model predictions:
+Daedelos integrates LLM evaluation loops that compare symbolic outputs with generative model predictions:
 
 1. **Symbolic reasoning** executes ground-truth rules
 2. **LLM predicts** an outcome for the same case  
@@ -176,7 +176,7 @@ This enables machine-verifiable reasoning that improves continuously.
 
 ## 📊 Observability
 
-Hydra emits OpenTelemetry-compatible structured logs:
+Daedelos emits OpenTelemetry-compatible structured logs:
 
 ```json
 {
@@ -200,9 +200,9 @@ Supports exporters for:
 ## 🧱 Repository Structure
 
 ```
-hydra-systems/
+Daedelos-systems/
 ├── apps/
-│   ├── hydra-cloud/         # Next.js SaaS frontend
+│   ├── Daedelos-cloud/         # Next.js SaaS frontend
 │   └── feather-runtime/     # Node.js runtime engine
 ├── packages/
 │   ├── symbolic-engine/     # JSONLogic interpreter + DSL compiler
@@ -220,7 +220,7 @@ hydra-systems/
 
 | Mode | Description | Example Users |
 |------|-------------|---------------|
-| **SaaS** | Hydra Cloud hosts control plane; runtime external | Startups, SMBs |
+| **SaaS** | Daedelos Cloud hosts control plane; runtime external | Startups, SMBs |
 | **Hybrid** | Cloud builder + on-prem Feather Runtime | Fintechs, Legaltech |
 | **On-Prem** | Full stack deployed internally | Healthcare, Banking |
 
@@ -256,13 +256,13 @@ Deployment managed via Docker, Kubernetes, or Terraform.
 - **Gartner (2025)**: "60% of AI projects will be canceled without explainability."
 - **McKinsey (2025)**: "80% of enterprises will require AI audit layers by 2027."
 
-Hydra directly addresses these pain points by delivering explainable AI infrastructure as a product.
+Daedelos directly addresses these pain points by delivering explainable AI infrastructure as a product.
 
 ---
 
 ## 🤝 Contributing
 
-Hydra welcomes contributions from the open-source community.
+Daedelos welcomes contributions from the open-source community.
 
 ### Development
 ```bash
@@ -273,13 +273,13 @@ pnpm run test
 ### Guidelines
 - Use conventional commits (`feat:`, `fix:`, `chore:`)
 - PRs must include updated tests and documentation
-- Follow the Hydra Code of Conduct
+- Follow the Daedelos Code of Conduct
 
 ---
 
 ## 📜 License
 
-Hydra Systems © 2025 Geddy Dukes  
+Daedelos Systems © 2025 Geddy Dukes  
 Licensed under the Elastic License 2.0 (ELv2).  
-Commercial use available via Hydra Cloud Enterprise.
+Commercial use available via Daedelos Cloud Enterprise.
 ```
